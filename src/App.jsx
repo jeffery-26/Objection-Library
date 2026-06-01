@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, X, Edit2, Trash2, Play, Filter, Tag, Users } from 'lucide-react';
+import { Search, Plus, X, Edit2, Trash2, Play, Filter, Tag, Users, Copy, Check } from 'lucide-react';
 import { supabase } from './supabase';
 
 function getYouTubeId(url) {
@@ -251,6 +251,28 @@ export default function App() {
 function VideoCard({ video, onEdit, onDelete }) {
   const thumb = getThumbnail(video.url);
   const icps = video.icps || [];
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(video.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = video.url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-stone-200 overflow-hidden card-hover group">
       <a href={video.url} target="_blank" rel="noopener noreferrer" className="block relative aspect-video bg-stone-100">
@@ -266,13 +288,13 @@ function VideoCard({ video, onEdit, onDelete }) {
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-display font-semibold text-stone-900 leading-tight">{video.title}</h3>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            <button onClick={onEdit} className="p-1 text-stone-400 hover:text-stone-900"><Edit2 size={13} /></button>
-            <button onClick={onDelete} className="p-1 text-stone-400 hover:text-red-600"><Trash2 size={13} /></button>
+            <button onClick={onEdit} className="p-1 text-stone-400 hover:text-stone-900" title="Edit"><Edit2 size={13} /></button>
+            <button onClick={onDelete} className="p-1 text-stone-400 hover:text-red-600" title="Delete"><Trash2 size={13} /></button>
           </div>
         </div>
         <p className="text-xs text-stone-500 mb-3">by {video.presenter}</p>
         {video.notes && <p className="text-xs text-stone-600 mb-3 leading-relaxed line-clamp-2">{video.notes}</p>}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 mb-3">
           {video.objections.map(o => (
             <span key={`obj-${o}`} className="text-[10px] font-medium px-2 py-0.5 bg-stone-100 text-stone-700 rounded">{o}</span>
           ))}
@@ -280,6 +302,16 @@ function VideoCard({ video, onEdit, onDelete }) {
             <span key={`icp-${i}`} className="text-[10px] font-medium px-2 py-0.5 bg-amber-50 text-amber-800 rounded">{i}</span>
           ))}
         </div>
+        <button
+          onClick={handleCopy}
+          className={`w-full flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-md border transition-colors ${
+            copied
+              ? 'bg-green-50 text-green-700 border-green-200'
+              : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 hover:border-stone-300'
+          }`}
+        >
+          {copied ? (<><Check size={13} /> Link copied</>) : (<><Copy size={13} /> Copy link</>)}
+        </button>
       </div>
     </div>
   );
